@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockSense</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080c10;
+  --surface: #0d1117;
+  --surface2: #161b22;
+  --border: #21262d;
+  --green: #00ff88;
+  --red: #ff4560;
+  --gold: #f0a500;
+  --blue: #4dabf7;
+  --text: #e6edf3;
+  --muted: #7d8590;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background-image: linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px); background-size:40px 40px; pointer-events:none; z-index:0; }
+.container { max-width:900px; margin:0 auto; padding:20px 16px; position:relative; z-index:1; }
+.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.logo { font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:3px; background:linear-gradient(90deg,var(--green),var(--gold)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.logo span { font-size:11px; font-family:'DM Mono',monospace; display:block; letter-spacing:2px; color:var(--muted); -webkit-text-fill-color:var(--muted); margin-top:-6px; }
+.live-badge { display:flex; align-items:center; gap:6px; background:rgba(0,255,136,0.08); border:1px solid rgba(0,255,136,0.2); border-radius:20px; padding:6px 14px; font-size:11px; font-family:'DM Mono',monospace; color:var(--green); }
+.live-dot { width:6px; height:6px; background:var(--green); border-radius:50%; animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+.tabs { display:flex; gap:4px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:4px; margin-bottom:24px; }
+.tab { flex:1; padding:10px; border:none; border-radius:8px; background:transparent; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.2s; }
+.tab.active { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.panel { display:none; }
+.panel.active { display:block; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; margin-bottom:16px; }
+.card-title { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:2px; color:var(--muted); margin-bottom:16px; text-transform:uppercase; }
+.btn-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.scan-btn { padding:14px; border-radius:12px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.2s; text-align:left; }
+.scan-btn:hover, .scan-btn.active { border-color:var(--green); background:rgba(0,255,136,0.05); }
+.scan-btn .icon { font-size:20px; display:block; margin-bottom:6px; }
+.scan-btn .desc { font-size:11px; color:var(--muted); margin-top:2px; }
+.run-btn { width:100%; padding:14px; border-radius:12px; border:none; background:linear-gradient(90deg,var(--green),#00cc6a); color:#000; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.run-btn:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(0,255,136,0.2); }
+.run-btn:disabled { background:var(--surface2); color:var(--muted); cursor:not-allowed; transform:none; box-shadow:none; }
+.results-box { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:16px; margin-top:16px; min-height:120px; }
+.stock-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); gap:12px; flex-wrap:wrap; }
+.stock-row:last-child { border-bottom:none; }
+.sym { font-weight:600; color:var(--text); font-family:'DM Mono',monospace; font-size:13px; min-width:90px; cursor:pointer; text-decoration:underline; text-decoration-color:var(--muted); }
+.sym:hover { color:var(--green); }
+.price-info { font-size:11px; color:var(--muted); font-family:'DM Mono',monospace; }
+.badge { font-weight:700; font-size:12px; padding:3px 10px; border-radius:6px; font-family:'DM Mono',monospace; }
+.badge.down { color:var(--red); background:rgba(255,69,96,0.1); }
+.badge.up { color:var(--green); background:rgba(0,255,136,0.1); }
+.badge.gold { color:var(--gold); background:rgba(240,165,0,0.1); }
+.section-sep { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; padding:10px 0 4px; border-top:1px solid var(--border); margin-top:6px; }
+.section-sep:first-child { border-top:none; margin-top:0; padding-top:0; }
+.loading { display:flex; align-items:center; justify-content:center; gap:10px; padding:30px; color:var(--muted); font-family:'DM Mono',monospace; font-size:12px; }
+.spinner { width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.empty { text-align:center; padding:30px; color:var(--muted); font-size:13px; }
+.detail-card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:16px; margin-top:12px; }
+.perf-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+@media(max-width:500px) { .perf-grid { grid-template-columns:repeat(2,1fr); } }
+.perf-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px; text-align:center; }
+.perf-label { font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; margin-bottom:4px; }
+.perf-val { font-size:15px; font-weight:700; font-family:'DM Mono',monospace; }
+.search-row { display:flex; gap:8px; margin-bottom:16px; }
+.search-inp { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--text); font-family:'DM Mono',monospace; font-size:13px; outline:none; }
+.search-inp:focus { border-color:var(--green); }
+.search-btn { padding:10px 18px; border-radius:8px; border:none; background:rgba(0,255,136,0.15); color:var(--green); font-size:13px; cursor:pointer; font-family:'DM Mono',monospace; }
+.input-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr auto; gap:8px; align-items:end; margin-bottom:12px; }
+@media(max-width:600px) { .input-grid { grid-template-columns:1fr 1fr; } .add-btn { grid-column:1/-1; } }
+.inp-group label { font-size:10px; font-family:'DM Mono',monospace; color:var(--muted); letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:5px; }
+input[type=text], input[type=number] { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-family:'DM Mono',monospace; font-size:13px; outline:none; transition:border-color 0.2s; }
+input:focus { border-color:var(--green); }
+input::placeholder { color:var(--muted); }
+.add-btn { padding:10px 16px; border-radius:8px; border:1px solid var(--green); background:rgba(0,255,136,0.1); color:var(--green); font-size:18px; cursor:pointer; }
+.ptable { width:100%; border-collapse:collapse; font-size:12px; font-family:'DM Mono',monospace; }
+.ptable th { text-align:left; padding:8px; color:var(--muted); font-size:10px; letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid var(--border); }
+.ptable td { padding:10px 8px; border-bottom:1px solid rgba(33,38,45,0.5); vertical-align:middle; }
+.ptable tr:last-child td { border-bottom:none; }
+.sbadge { padding:3px 8px; border-radius:20px; font-size:10px; font-weight:600; }
+.s-hold { background:rgba(77,171,247,0.1); color:var(--blue); border:1px solid rgba(77,171,247,0.2); }
+.s-target { background:rgba(0,255,136,0.1); color:var(--green); border:1px solid rgba(0,255,136,0.2); }
+.s-loss { background:rgba(255,69,96,0.1); color:var(--red); border:1px solid rgba(255,69,96,0.2); }
+.del-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:4px 6px; border-radius:4px; }
+.del-btn:hover { color:var(--red); }
+.refresh-btn { display:flex; align-items:center; gap:6px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:7px 12px; color:var(--muted); font-family:'DM Mono',monospace; font-size:11px; cursor:pointer; margin-bottom:14px; }
+.refresh-btn:hover { border-color:var(--blue); color:var(--blue); }
+.notif { position:fixed; top:20px; right:20px; background:var(--surface2); border:1px solid var(--green); border-radius:12px; padding:14px 18px; font-size:13px; max-width:280px; z-index:1000; transform:translateX(400px); transition:transform 0.3s; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
+.notif.show { transform:translateX(0); }
+.notif.red { border-color:var(--red); }
+.notif-title { font-weight:700; margin-bottom:3px; color:var(--green); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; }
+.notif.red .notif-title { color:var(--red); }
+.g { color:var(--green); }
+.r { color:var(--red); }
+</style>
+</head>
+<body>
+<div class="notif" id="notif"><div class="notif-title" id="ntitle">ALERT</div><div id="nbody"></div></div>
+<div class="container">
+  <div class="header">
+    <div class="logo">StockSense<span>PERSONAL MARKET AI</span></div>
+    <div class="live-badge"><div class="live-dot"></div>EOD DATA</div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('scanner')">📊 Scanner</button>
+    <button class="tab" onclick="switchTab('search')">🔍 Stock Search</button>
+    <button class="tab" onclick="switchTab('portfolio')">💼 Portfolio</button>
+  </div>
+  <div class="panel active" id="panel-scanner">
+    <div class="card">
+      <div class="card-title">Scan Type Chuno</div>
+      <div class="btn-grid">
+        <button class="scan-btn" onclick="toggleScan(this,'losers')"><span class="icon">📉</span>20% Down Stocks<div class="desc">Aaj jo stocks 20%+ gire</div></button>
+        <button class="scan-btn" onclick="toggleScan(this,'week52')"><span class="icon">🏆</span>52-Week High<div class="desc">Naya record todne wale</div></button>
+        <button class="scan-btn" onclick="toggleScan(this,'box')"><span class="icon">📦</span>Box Theory<div class="desc">Darvas breakouts aaj</div></button>
+        <button class="scan-btn" onclick="toggleScan(this,'all')"><span class="icon">⚡</span>Sab Ek Saath<div class="desc">Full scan</div></button>
+      </div>
+      <button class="run-btn" id="runBtn" onclick="runScan()" disabled>Scan Karo</button>
+    </div>
+    <div id="scan-results"></div>
+  </div>
+  <div class="panel" id="panel-search">
+    <div class="card">
+      <div class="card-title">Stock Detail Dekho</div>
+      <div class="search-row">
+        <input class="search-inp" id="search-inp" type="text" placeholder="NSE Symbol — jaise RELIANCE" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')searchStock()">
+        <button class="search-btn" onclick="searchStock()">SEARCH</button>
+      </div>
+      <div id="search-result"><div class="empty">NSE symbol likho aur search karo<br><span style="font-size:11px;color:var(--muted)">Example: RELIANCE, TCS, INFY, SBIN</span></div></div>
+    </div>
+  </div>
+  <div class="panel" id="panel-portfolio">
+    <div class="card">
+      <div class="card-title">Stock Add Karo</div>
+      <div class="input-grid">
+        <div class="inp-group"><label>NSE Symbol</label><input type="text" id="p-sym" placeholder="RELIANCE" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="inp-group"><label>Buy ₹</label><input type="number" id="p-buy" placeholder="200"></div>
+        <div class="inp-group"><label>Target ₹</label><input type="number" id="p-tgt" placeholder="250"></div>
+        <div class="inp-group"><label>Stop Loss ₹</label><input type="number" id="p-sl" placeholder="180"></div>
+        <button class="add-btn" onclick="addStock()">+</button>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:0">My Holdings</div>
+        <button class="refresh-btn" onclick="refreshPrices()"><span>↻</span> Update</button>
+      </div>
+      <div id="portfolio-body"></div>
+    </div>
+  </div>
+</div>
+<script>
+const API='';
+let selectedScans=new Set();
+let portfolio=JSON.parse(localStorage.getItem('ss_port')||'[]');
+function switchTab(t){document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['scanner','search','portfolio'][i]===t));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+t).classList.add('active');if(t==='portfolio')renderPortfolio();}
+function toggleScan(btn,type){if(type==='all'){selectedScans=new Set(['losers','week52','box']);document.querySelectorAll('.scan-btn').forEach(b=>b.classList.add('active'));}else{btn.classList.toggle('active');selectedScans.has(type)?selectedScans.delete(type):selectedScans.add(type);}document.getElementById('runBtn').disabled=selectedScans.size===0;}
+async function runScan(){const btn=document.getElementById('runBtn');btn.disabled=true;btn.textContent='Scanning...';const res=document.getElementById('scan-results');res.innerHTML='<div class="card"><div class="loading"><div class="spinner"></div>NSE data fetch ho raha hai...</div></div>';let html='<div class="card"><div class="card-title">Results — '+new Date().toLocaleTimeString('en-IN')+'</div>';try{if(selectedScans.has('losers')){const r=await fetch(API+'/api/scan/losers').then(x=>x.json());if(r.data&&r.data.length>0){html+='<div class="section-sep">📉 20% Ya Zyada Down — Aaj ('+r.data.length+' stocks)</div>';r.data.forEach(s=>{html+=`<div class="stock-row"><span class="sym" onclick="goSearch('${s.symbol}')">${s.symbol}</span><span class="price-info">O:₹${s.open} C:₹${s.close}</span><span class="price-info">Vol: ${(s.volume/100000).toFixed(1)}L</span><span class="badge down">${s.change_pct}%</span></div>`;});}else{html+='<div class="section-sep">📉 20% Down</div><div class="empty">'+(r.error||'Aaj koi stock 20% down nahi hua')+'</div>';}}if(selectedScans.has('week52')||selectedScans.has('box')){const r=await fetch(API+'/api/scan/breakouts').then(x=>x.json());if(selectedScans.has('week52')){if(r.week52&&r.week52.length>0){html+='<div class="section-sep">🏆 52-Week High Breakouts ('+r.week52.length+')</div>';r.week52.forEach(s=>{html+=`<div class="stock-row"><span class="sym" onclick="goSearch('${s.symbol}')">${s.symbol}</span><span class="price-info">₹${s.close}</span><span class="price-info">52W: ₹${s.high52}</span><span class="badge gold">NEW HIGH</span></div>`;});}else{html+='<div class="section-sep">🏆 52-Week High</div><div class="empty">'+(r.error||'Aaj koi 52-week high nahi')+'</div>';}}if(selectedScans.has('box')){if(r.box&&r.box.length>0){html+='<div class="section-sep">📦 Box Theory Breakouts ('+r.box.length+')</div>';r.box.forEach(s=>{html+=`<div class="stock-row"><span class="sym" onclick="goSearch('${s.symbol}')">${s.symbol}</span><span class="price-info">₹${s.close}</span><span class="badge gold">+${s.change_pct}% BREAK</span></div>`;});}else{html+='<div class="section-sep">📦 Box Theory</div><div class="empty">'+(r.error||'Aaj koi breakout nahi')+'</div>';}}}}catch(e){html+='<div class="empty" style="color:var(--red)">Server se connect nahi ho pa raha.</div>';}html+='</div>';res.innerHTML=html;btn.disabled=false;btn.textContent='Dobara Scan Karo';}
+function goSearch(sym){switchTab('search');document.getElementById('search-inp').value=sym;searchStock();}
+async function searchStock(){const sym=document.getElementById('search-inp').value.trim();if(!sym)return;const div=document.getElementById('search-result');div.innerHTML='<div class="loading"><div class="spinner"></div>'+sym+' ka data aa raha hai...</div>';try{const d=await fetch(API+'/api/stock/'+sym).then(x=>x.json());if(d.error){div.innerHTML='<div class="empty" style="color:var(--red)">'+d.error+'</div>';return;}const chgClass=d.change>=0?'g':'r';function perfColor(v){if(!v)return'color:var(--muted)';return v>=0?'color:var(--green)':'color:var(--red)';}function perfVal(v){if(v===null||v===undefined)return'—';return(v>=0?'+':'')+v+'%';}div.innerHTML=`<div class="detail-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px"><div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px">${d.symbol}</div><div style="color:var(--muted);font-size:12px">${d.name||''}</div></div><div style="text-align:right"><div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace">₹${d.price?.toFixed(1)}</div><div class="${chgClass}" style="font-family:'DM Mono',monospace;font-size:13px">${d.change>=0?'+':''}${d.change}% aaj</div></div></div><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:10px">PERFORMANCE</div><div class="perf-grid"><div class="perf-box"><div class="perf-label">1 WEEK</div><div class="perf-val" style="${perfColor(d.perf_1w)}">${perfVal(d.perf_1w)}</div></div><div class="perf-box"><div class="perf-label">1 MONTH</div><div class="perf-val" style="${perfColor(d.perf_1m)}">${perfVal(d.perf_1m)}</div></div><div class="perf-box"><div class="perf-label">3 MONTH</div><div class="perf-val" style="${perfColor(d.perf_3m)}">${perfVal(d.perf_3m)}</div></div><div class="perf-box"><div class="perf-label">6 MONTH</div><div class="perf-val" style="${perfColor(d.perf_6m)}">${perfVal(d.perf_6m)}</div></div></div><div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:'DM Mono',monospace;font-size:12px"><div style="background:var(--surface);padding:10px;border-radius:8px;border:1px solid var(--border)"><div style="color:var(--muted);font-size:10px;margin-bottom:4px">52W HIGH</div><div style="color:var(--green)">₹${d.high52?.toFixed(1)||'—'}</div></div><div style="background:var(--surface);padding:10px;border-radius:8px;border:1px solid var(--border)"><div style="color:var(--muted);font-size:10px;margin-bottom:4px">52W LOW</div><div style="color:var(--red)">₹${d.low52?.toFixed(1)||'—'}</div></div><div style="background:var(--surface);padding:10px;border-radius:8px;border:1px solid var(--border)"><div style="color:var(--muted);font-size:10px;margin-bottom:4px">VOLUME TODAY</div><div>${d.volume?(d.volume/100000).toFixed(1)+'L':'—'}</div></div><div style="background:var(--surface);padding:10px;border-radius:8px;border:1px solid var(--border)"><div style="color:var(--muted);font-size:10px;margin-bottom:4px">AVG VOLUME</div><div>${d.avgVolume?(d.avgVolume/100000).toFixed(1)+'L':'—'}</div></div></div><div style="margin-top:10px;text-align:center"><a href="https://www.screener.in/company/${sym}/" target="_blank" style="color:var(--blue);font-size:12px;font-family:'DM Mono',monospace">📊 Full Fundamentals → Screener.in</a></div></div>`;}catch(e){div.innerHTML='<div class="empty" style="color:var(--red)">Server se connect nahi ho pa raha</div>';}}
+function saveP(){localStorage.setItem('ss_port',JSON.stringify(portfolio));}
+function addStock(){const sym=document.getElementById('p-sym').value.trim().toUpperCase();const buy=parseFloat(document.getElementById('p-buy').value);const tgt=parseFloat(document.getElementById('p-tgt').value);const sl=parseFloat(document.getElementById('p-sl').value);if(!sym||!buy||!tgt||!sl){showNotif('⚠️ ERROR','Sabhi fields bharo!',true);return;}if(tgt<=buy){showNotif('⚠️ ERROR','Target > Buy price hona chahiye!',true);return;}if(sl>=buy){showNotif('⚠️ ERROR','Stop Loss < Buy price hona chahiye!',true);return;}portfolio.push({sym,buy,tgt,sl,cur:null});saveP();['p-sym','p-buy','p-tgt','p-sl'].forEach(id=>document.getElementById(id).value='');showNotif('✅ ADDED',sym+' portfolio mein add hua!',false);renderPortfolio();refreshPrices();}
+function removeStock(i){const s=portfolio[i].sym;portfolio.splice(i,1);saveP();renderPortfolio();showNotif('🗑️ REMOVED',s+' remove ho gaya',true);}
+function renderPortfolio(){const div=document.getElementById('portfolio-body');if(portfolio.length===0){div.innerHTML='<div class="empty">Koi stock nahi hai<br>Upar se add karo</div>';return;}let html='<div style="overflow-x:auto"><table class="ptable"><tr><th>Stock</th><th>Buy</th><th>Current</th><th>Target</th><th>SL</th><th>P&L</th><th>Status</th><th></th></tr>';portfolio.forEach((s,i)=>{const pnl=s.cur?((s.cur-s.buy)/s.buy*100).toFixed(1):null;const pnlClass=pnl>0?'g':pnl<0?'r':'';let status='HOLD',sc='s-hold';if(s.cur){if(s.cur>=s.tgt){status='TARGET ✓';sc='s-target';}else if(s.cur<=s.sl){status='SL HIT';sc='s-loss';}}html+=`<tr><td style="font-weight:600;cursor:pointer;color:var(--blue)" onclick="goSearch('${s.sym}')">${s.sym}</td><td>₹${s.buy}</td><td>${s.cur?'₹'+s.cur.toFixed(1):'—'}</td><td style="color:var(--green)">₹${s.tgt}</td><td style="color:var(--red)">₹${s.sl}</td><td class="${pnlClass}">${pnl!==null?(pnl>0?'+':'')+pnl+'%':'—'}</td><td><span class="sbadge ${sc}">${status}</span></td><td><button class="del-btn" onclick="removeStock(${i})">✕</button></td></tr>`;});html+='</table></div>';div.innerHTML=html;}
+async function refreshPrices(){if(portfolio.length===0)return;await Promise.all(portfolio.map(async s=>{try{const d=await fetch(API+'/api/stock/'+s.sym).then(x=>x.json());if(d.price){const prev=s.cur;s.cur=d.price;if(prev){if(s.cur>=s.tgt&&prev<s.tgt){showNotif('🎯 TARGET HIT!',s.sym+' ₹'+s.tgt+' pe pahuncha! SELL karo!',false);triggerNotif('TARGET HIT 🎯',s.sym+' ₹'+s.tgt+' cross kar gaya!');}if(s.cur<=s.sl&&prev>s.sl){showNotif('🚨 STOP LOSS!',s.sym+' ₹'+s.sl+' se neeche! SELL karo!',true);triggerNotif('STOP LOSS 🚨',s.sym+' stop loss hit!');}}}catch(e){}}));saveP();renderPortfolio();}
+function triggerNotif(t,b){if('Notification'in window&&Notification.permission==='granted')new Notification(t,{body:b});else if('Notification'in window)Notification.requestPermission().then(p=>{if(p==='granted')new Notification(t,{body:b});});}
+function showNotif(title,body,isRed){const n=document.getElementById('notif');document.getElementById('ntitle').textContent=title;document.getElementById('nbody').textContent=body;n.className='notif'+(isRed?' red':'');n.classList.add('show');setTimeout(()=>n.classList.remove('show'),4000);}
+if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
+renderPortfolio();
+setInterval(()=>{if(portfolio.length>0)refreshPrices();},60000);
+</script>
+</body>
+</html>
